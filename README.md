@@ -2,7 +2,7 @@
 
 Coursework for SOCS-SHU 205, *How Machines Map the Human World*, NYU Shanghai.
 
-**Live site:** (https://github.com/addiemdng/spatial-portfolio-addie/edit/main/README.md)
+**Live site:** https://github.com/addiemdng/spatial-portfolio-addie
 
 ## What is here
 
