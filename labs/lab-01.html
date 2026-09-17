@@ -46,8 +46,7 @@
     </p>
 
     <figure>
-      <iframe width="700" height="600" allow="local-network-access; geolocation" title="Lab 1 · China in layers · Addie Nguyen" src="https://nyuds.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=7268e1c074d647b4947a3711ef544ffa&theme=dark&bookmarks=true&heading=true&legend=true&information=true&scroll=false&basemaps=true&center=109.6197216404386,33.47431938699729&scale=36978595.474472" ></iframe>
-      <figcaption>
+<iframe width="700" height="600" allow="local-network-access; geolocation" title="Lab 1 · China in layers · Addie Nguyen" src="https://nyuds.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=7268e1c074d647b4947a3711ef544ffa&theme=light&bookmarks=true&heading=true&legend=true&information=true&basemaps=true&center=109.6197216404386,33.47431938699729&scale=36978595.474472" ></iframe>      <figcaption>
         Figure 1. China in layers – Geographic layers of China
       </figcaption>
     </figure>
@@ -56,6 +55,12 @@
     <p>
       For Chongqing, my traced area was 82,383.30 km² against an official figure of 82,400 km², a difference of just 16.7 km². Dividing the municipal population (~32 million) by my measured area gives a density of 388.4 people/km². That's far below the 1,500 people/km² urban threshold, despite Chongqing being commonly described as one of the world's largest cities. The World Cities layer gives a very different population for the same name: 12,479,000, sourced to UN-Habitat, counting the continuous urban area rather than the mostly rural municipality.
     </p>
+
+     <h2>Reflections</h2>
+    <p>
+For the cholera map, the pump conclusion held at two of three settings, but not all three. At the middle and far-right bandwidths, only one pump, the 43 Broadwick Street one, fell inside the hottest band, and it sat nearest the centre both times. At the far-left (smallest) bandwidth, the finding became ambiguous: three pumps landed in the hottest band (52 Rupert Street, 1 Carnaby Street, 43 Broadwick), and while 43 Broadwick was still closest to the centre, the surface no longer pointed at one clear source. That means a density map made by someone else would tell me nothing about which of these three states it was in, since the scale of the heatmap was unknown to me.
+I put the population sourced from UN-Habitat, 12,479,000, in the caption because it's the number that actually matches the dot layer that accounts for only the actual urban population. The roughly 32 million figure describes something else entirely: the population of Chongqing within its administrative boundary, which contains wide areas of rural villages. If someone is looking at this map without the unit, they would likely assume Chongqing is a dense city of tens of millions, when the municipal density I calculated, 388.4 people/km², is well under the 1,500 people/km² urban threshold.
+A density map like this could plausibly guide where a public health team should place a mobile testing or vaccination site during an outbreak to tackle where most cases concentrate. If the bandwidth were set too large, it would smooth the entire affected area into a broad zone. If so, medical personnel and officials can not tell where the epicenter of the outbreak is, which means that those most at risk of infection/death might not receive appropriate care.    </p>
 
     <h2>What this does not show</h2>
     <div class="limits">
