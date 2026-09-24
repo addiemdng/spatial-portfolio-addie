@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lab 01 · Addie Manh Dung Nguyen</title>
+<title>Lab 02 · Addie Manh Dung Nguyen</title>
 
 <!-- Note the ../ — this page is inside the labs folder, so it has to
      look one level up to find the stylesheet. -->
@@ -27,11 +27,11 @@
 <article class="entry">
   <div class="wrap wrap-narrow">
 
-    <p class="kicker">Lab 01 · September 2026</p>
+    <p class="kicker">Lab 02 · September 2026</p>
 
     <!-- EDIT THIS: a title that says what you found, not what you did.
          "Where the metro does not go" beats "Lab 1 report". -->
-    <h1>Give this lab a real title</h1>
+    <h1>People Vote, Not Land: The 2016 Election, Mapped Four Ways</h1>
 
     <!-- ============================================================
          The six parts. Every entry in this course has all six.
@@ -41,21 +41,54 @@
 
     <h2>The question</h2>
     <p>
-      One sentence. It must be answerable, and it must have a "where" in it.
-      Write it as a question, with a question mark.
+        Where was support for each party concentrated in the 2016 U.S. presidential election, and does that concentration look different depending on whether you measure it by counties, by votes, or by land?
     </p>
 
     <h2>The data</h2>
     <p>
-      Where it came from, when it was collected, who made it, and under what
-      licence. Then the part people skip: what is missing from it.
+      The layer is a county-level 2016 U.S. presidential election results feature layer **election_2016**,
+      carrying <code>DEM_votes</code>, <code>GOP_votes</code>, <code>DEM_per</code>, <code>GOP_per</code>, and
+      <code>votes_total</code> fields. There were three defects I could find inside the file itself:
+    </p>
+    <ul>
+      <li><strong>An empty <code>DEM_votes</code> field.</strong> A subset of counties carries no Democratic
+        vote count at all.</li>
+      <li><strong>An alias that overclaims precision.</strong> <code>DEM_per</code> is stored as a 0–1
+        proportion (the national county average is 0.32 with a standard deviation of 0.15) but its field alias reads as a
+        percentage.</li>
+      <li><strong>Alaska duplicated 28×.</strong> The same Alaska row is duplicated 27 times beyond the one
+        real record.</li>
+    </ul>
+    <p>
+      I later fixed the Alaska error by removing the 27 extra counts, which takes the raw sums (65,030,312 Democratic, 64,716,166 Republican) down to about 62,519,231 and 61,195,015. The winner doesn't change; the margin roughly quadruples, from ~314,000 to ~1,324,000 votes. What it can't fix is that the certified 2016 result was 65,853,514 Democratic to 62,984,828 Republican, so the corrected sums are still short.
     </p>
 
     <h2>The method</h2>
+     <p>
+      I built the map in ArcGIS Online Map Viewer, using the default web Mercator basemap. I first changed the
+      layer to predominant category (using hue to indicate the winner of each county between GOP vs. DEM,
+      darker for a larger margin). I then changed the layer's style to graduated symbol (using the size of the
+      symbol to represent <code>votes_total</code>). I shifted to the standardized score method, where I used
+      the following expression to calculate the z-score of each county against the national county average.
+    </p>
+    <pre class="method-code"><code>// Lab 2 - standardised score for % DEM, 2016
+//
+//   z = (value - mean) / standard deviation
+//
+// The two constants come from the Statistics panel
+// for DEM_per, with no filter applied.
+ 
+var mean = 0.3174;
+var sd   = 0.1527;
+ 
+return ($feature.DEM_per - mean) / sd;</code></pre>
     <p>
-      What you actually did, in enough detail that someone else could repeat
-      it. Name the tool, the projection, and any threshold or class break you
-      chose. If you chose a number, say why you chose that number.
+      For the classification sweep, I styled the layer as Counts and Amounts (color) on <code>DEM_per</code>,
+      turned on Classify data, and set 5 classes. I ran the same layer three times, changing only the method
+      (Equal interval, Quantile, Natural breaks), holding extent and color ramp constant, and screenshotted
+      each run. Finally, I used <a href="https://go-cart.io" target="_blank" rel="noopener">go-cart.io</a> to
+      create a state cartogram (using area resized by total votes cast, colored by Pct_DEM quintile to
+      represent the statewide total votes and how much the states lean Democratic).
     </p>
 
     <!-- ============================================================
@@ -72,34 +105,275 @@
          Delete whichever one you are not using.
          ============================================================ -->
     <figure>
-      <img src="map-01.svg" alt="Describe what the map shows, for someone who cannot see it.">
-      <!--
-      <iframe src="PASTE-YOUR-ARCGIS-EMBED-URL-HERE"
-              title="Describe your map" loading="lazy"></iframe>
+
+      <iframe src="<iframe width="700" height="600" allow="local-network-access; geolocation" title="Lab 2 · Four maps of 2016 · Addie Nguyen" src="https://nyuds.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=648a4f8378e64002b0065eaf3b9579ed&theme=light&heading=true&legend=true&information=true&share=true&center=-108.4734559796341,45.537976941879215&scale=73957190.948944" ></iframe>"
+              title="The 2016 United States presidential election results: Standardized Democratic Vote Share (z-Score) by County. Red denotes z-scores lower than 0, blue denotes z-scores higher than 0. " loading="lazy"></iframe>
       -->
       <figcaption>
-        A caption that says what to look at. Not "Figure 1" — tell the reader
-        where their eye should go and what it means.
+        Figure 0. Livemap of the 2016 United States presidential election results: Standardized Democratic Vote Share (z-Score) by County. Red denotes z-scores lower than 0, blue denotes z-scores higher than 0. 
       </figcaption>
     </figure>
 
+       <h3>Classification sensitivity — same data, three schemes</h3>
+    <p class="method-note">
+      Same layer, same extent, same color ramp. Only the classification method changes between rows.
+    </p>
+    <table class="sensitivity-table">
+      <thead>
+        <tr>
+          <th>Scheme</th>
+          <th>The four break values</th>
+          <th>Counties in the top class</th>
+          <th>What this map appears to argue</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Equal interval</td>
+          <td>0.211, 0.39, 0.57, 0.749</td>
+          <td>43</td>
+          <td>
+            Top class starts at 74.9% — argues heavily Democratic counties are rare outliers. The threshold is
+            legible on its own: "74.9% or higher" means the same thing regardless of how many counties clear
+            it.
+          </td>
+        </tr>
+        <tr>
+          <td>Quantile</td>
+          <td>0.19, 0.251, 0.328, 0.433</td>
+          <td>626</td>
+          <td>
+            Top class starts at just 43.3%, and always captures roughly the top fifth of counties (626 of
+            ~3,143) by construction, wherever the data falls. Argues Democratic-leaning counties are far more
+            widespread — an artifact of the binning rule, not the underlying pattern.
+          </td>
+        </tr>
+        <tr>
+          <td>Natural breaks</td>
+          <td>0.761, 0.777, 0.804, 0.827</td>
+          <td>11</td>
+          <td>
+            Jenks finds a real gap and draws the line at 82.7%, isolating 11 counties. Same basic story as
+            equal interval — a small, distinct Democratic cluster — but more extreme, since the break was
+            chosen to separate it from everything else.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+ 
+    <div class="sensitivity-screenshots">
+      <figure>
+        <img src="classification-equal-interval.png"
+             alt="Choropleth of Democratic vote share by county using equal-interval classification, 5 classes, showing a small dark top class.">
+        <figcaption>Equal interval.</figcaption>
+      </figure>
+      <figure>
+        <img src="classification-quantile.png"
+             alt="Choropleth of Democratic vote share by county using quantile classification, 5 classes, showing a much larger top class.">
+        <figcaption>Quantile.</figcaption>
+      </figure>
+      <figure>
+        <img src="classification-natural-breaks.png"
+             alt="Choropleth of Democratic vote share by county using natural breaks (Jenks) classification, 5 classes, showing a very small top class.">
+        <figcaption>Natural breaks.</figcaption>
+      </figure>
+    </div>
+ 
+    <h3>Four views of the same election</h3>
+    <figure>
+      <img src="fig1-predominant-party.png" alt="Map of the 2016 election results by predominant party per county, red for GOP-won counties and blue for DEM-won counties, shaded darker for larger margins of victory.">
+      <figcaption>
+        Figure 1. Predominant party by county. Red denotes counties where the GOP share was higher, blue where
+        the DEM share was higher; darker shade denotes a larger margin.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="fig2-graduated-symbol.png" alt="Map of the 2016 election results with graduated circle symbols sized by total votes cast per county.">
+      <figcaption>
+        Figure 2. Total votes cast by county. Circle size denotes <code>votes_total</code> for that county.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="fig3-zscore.png" alt="Diverging map of standardized Democratic vote share by county, red for below-average and blue for above-average z-scores.">
+      <figcaption>
+        Figure 3. Standardized Democratic vote share (z-score) by county, relative to the national population of
+        counties. Red denotes z-scores below 0, blue denotes z-scores above 0.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="fig4-cartogram.png" alt="Cartogram of U.S. states resized by total votes cast, colored by Democratic vote share quintile.">
+      <figcaption>
+        Figure 4. Cartogram of Democratic vote share (quintiles), states resized by total votes cast
+        (130M total). Larger state area denotes more votes cast in that state.
+      </figcaption>
+    </figure>
+ 
+    <h3>Reading the channels</h3>
+    <table class="sensitivity-table">
+      <thead>
+        <tr>
+          <th>Map</th>
+          <th>Visual channel</th>
+          <th>What it makes easy to see</th>
+          <th>What it hides or distorts</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1 · Predominant category</td>
+          <td>Hue</td>
+          <td>
+            A clean binary read, county by county: which party's share was higher, and by how much (via
+            shade).
+          </td>
+          <td>
+            Says nothing about votes or population. A huge, sparse red county carries the same visual weight
+            as a small, dense one — the classic "land doesn't vote" distortion.
+          </td>
+        </tr>
+        <tr>
+          <td>2 · Graduated symbol</td>
+          <td>Size</td>
+          <td>
+            Where the votes actually were. Large circles over Los Angeles, Chicago, and New York correct the
+            choropleth's land-area bias.
+          </td>
+          <td>
+            Says nothing about which party won. Circles in dense metro clusters overlap and merge, making
+            individual counties hard to distinguish.
+          </td>
+        </tr>
+        <tr>
+          <td>3 · Standardized score</td>
+          <td>Value (lightness)</td>
+          <td>
+            How far a county's Democratic share sits from the comparison population's average, in standardized
+            units rather than raw percentage points.
+          </td>
+          <td>
+            Depends entirely on the reference population — here, all U.S. counties. Change it and every
+            county's color changes with no change to the underlying votes. It also inherits the layer's own
+            data-quality problems, since the average and std. dev. were computed over the flawed rows.
+          </td>
+        </tr>
+        <tr>
+          <td>4 · Cartogram</td>
+          <td>Area</td>
+          <td>
+            Corrects land-area distortion at the state level: high-population states like California and New
+            York get appropriate visual weight, low-turnout states shrink.
+          </td>
+          <td>
+            Recognizable state shapes are lost, so it's harder to orient. Aggregating to state quintiles also
+            erases the county-level texture in maps 1–3 — a state can look uniform while containing a real mix
+            of red rural and blue urban counties.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+       
     <h2>What I found</h2>
     <p>
-      Plain language. What does the map support? Write it so someone outside
-      this course could follow it.
+      By predominant category, the GOP's share was higher in 2,555 counties, the DEM's in 408 — a 6-to-1 split
+      that makes Figure 1 look overwhelmingly red. (The two counts add to 2,963, short of the ~3,143 U.S.
+      counties — consistent with the empty <code>DEM_votes</code> field leaving some counties unclassifiable.)
+      But a county count isn't a vote count: Figure 2's graduated symbols show a large share of actual votes
+      sitting inside a small number of high-population counties — Los Angeles, Chicago, New York — that barely
+      register as shapes in a county tally. Count counties and Republicans dominate; count votes and the
+      picture is far closer.
+    </p>
+    <p>
+      Across the three schemes, the top class swung from 11 counties (natural breaks) to 43 (equal interval)
+      to 626 (quantile) — a 50-fold range on identical data. Equal interval and natural breaks broadly agree
+      (a small, distinct cluster of strongly Democratic counties); quantile disagrees not because the pattern
+      changed, but because it always fills its top class with roughly a fifth of counties, wherever the values
+      fall.
+    </p>
+ 
+    <h3>The scheme I'd publish</h3>
+    <table class="sensitivity-table report-table">
+      <thead>
+        <tr>
+          <th>Report</th>
+          <th>Yours</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>The scheme, named</td>
+          <td>
+            Equal interval. Its breaks are self-explanatory — "top class starts at 74.9%" is checkable without
+            knowing how many counties qualify. Quantile always allocates the same fifth to the top class
+            regardless of the data, so its map describes its own construction more than the vote pattern.
+          </td>
+        </tr>
+        <tr>
+          <td>The class count, and why that count</td>
+          <td>
+            5, fixed by the lab — inside the recommended 4–7 range for a single-hue choropleth a reader can
+            still tell apart. Fewer loses gradation; more starts to blur.
+          </td>
+        </tr>
+        <tr>
+          <td>One alternative scheme, mapped, and what changed</td>
+          <td>
+            Quantile. Top class jumped from 43 counties to 626 (14.5&times;), threshold dropped from 74.9% to
+            43.3%. The map fills in far more blue, though most of those counties are only moderately
+            Democratic, not the strongly Democratic counties equal interval isolates.
+          </td>
+        </tr>
+        <tr>
+          <td>The claim you would still make if the scheme changed</td>
+          <td>
+            Democratic vote share is concentrated in a minority of counties, largely the same ones across
+            schemes — natural breaks' 11 sit inside equal interval's 43. Only how large that minority looks
+            changes: under 1% (natural breaks) up to a fifth (quantile) — never a majority, under any scheme.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+ 
+    <h2>Written reflection</h2>
+    <p>
+      I published equal interval and set aside natural breaks, which tells nearly the same story more
+      dramatically: 11 counties above 82.7% Democratic share, versus 43 above 74.9%. Natural breaks isn't wrong
+      — it finds a real gap, not an arbitrary width — but a reader who saw only that map, without the scheme
+      named, couldn't tell whether "the top class" meant 11 counties, 43, or quantile's automatic 626. Equal
+      interval's breaks are at least legible on their own.
+    </p>
+    <p>
+      The z-score map centers on 32%, the plain average of each county's Democratic share. That's not the
+      national vote share (about 51%, once Alaska and the undercount are worked out against certified totals)
+      — it's the average county, and most counties are small, rural, and lean Republican. Centering there makes
+      a deeply red county the map's neutral baseline, so a county at 40% Democratic reads as blue-leaning even
+      though the GOP carried it easily. I'd center the ramp on the vote-weighted national share instead, so the
+      color break tracks who actually won the votes, not what the typical county looks like.
+    </p>
+    <p>
+      That choice has real stakes: campaigns use maps like this to decide where to open field offices. A
+      planner reading a county at "40%, colored blue" could mistake it for persuadable, when it's really solid
+      Republican — and the Democratic minority actually worth turning out there get read as already-won
+      either way.
     </p>
 
     <h2>What this does not show</h2>
     <div class="limits">
       <p>
-        The honest part. What the map cannot support, what you had to assume,
-        and what would change your answer. If your unit of analysis could have
-        been drawn differently, say so here.
+     None of these maps show third-party voters or non-voters — <code>DEM_per</code> and
+        <code>GOP_per</code> are shares of the two-party vote, not of eligible adults, so a closely-divided
+        county can still have a large share of residents represented by neither color. The layer's own defects
+        limit everything built from it: the empty <code>DEM_votes</code> field silently drops an unknown
+        number of counties rather than counting them as zero, and the Alaska duplication — fixable from inside
+        the file — sits alongside a deeper undercount (several million votes short of the certified result, by
+        different amounts on each side) that this lab can't diagnose. Every vote total above should be read as
+        approximate for that reason. The cartogram's state-level aggregation also means its color has none of
+        the county-level resolution the other three maps do.
       </p>
       <p>
-        <strong>AI use:</strong> AI-assisted for [what], using [which tool].
-        I verified [how]. If you did not use AI, write "No AI tools were used
-        for this entry."
+        <strong>AI use:</strong> AI-assisted for tidying the HTML in the lab entry, using Claude.
+I verified it by opening the page on a phone and a laptop and
+confirming no external resources were added. The analysis,
+the parameter choices and the interpretation are my own.
       </p>
     </div>
 
