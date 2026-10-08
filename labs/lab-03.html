@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab 03 · Addie Manh Dung Nguyen</title>
+
+<!-- This page is inside the labs folder, so the stylesheet is one level up. -->
+<link rel="stylesheet" href="../style.css">
+
+<style>
+  .sensitivity-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  .sensitivity-table th {
+    text-align: left; background: #b24c35; color: #fff; font-weight: 700;
+    padding: 0.75rem 1rem; border-bottom: 1px solid #d8d2c6;
+  }
+  .sensitivity-table td {
+    padding: 0.75rem 1rem; border-bottom: 1px solid #e2ded4;
+    vertical-align: top; line-height: 1.45;
+  }
+  .sensitivity-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sensitivity-table th.num { text-align: right; }
+  .sensitivity-table tr.hl td { background: #f9efe9; font-weight: 700; }
+  .table-scroll { overflow-x: auto; }
+  .method-code {
+    background: #f4f1ea; border: 1px solid #e2ded4; border-radius: 6px;
+    padding: 1rem 1.25rem; overflow-x: auto; margin: 1rem 0;
+    font-size: 0.9em; line-height: 1.5; color: #333;
+  }
+  .frame-line {
+    background: #f4f1ea; border-left: 4px solid #b24c35; margin: 1rem 0 1.5rem;
+    padding: 0.9rem 1.25rem; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.92em; line-height: 1.55; color: #333; white-space: pre-wrap;
+  }
+  figure img { max-width: 100%; height: auto; display: block; }
+  figure figcaption { font-size: 0.9em; color: #555; margin-top: 0.4rem; }
+  .fig-pair { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .fig-pair figure { flex: 1 1 280px; margin: 0; }
+  .link-row { margin: 1rem 0; }
+</style>
+</head>
+
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Addie Manh Dung Nguyen</a>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a href="../index.html#labs">Labs</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<article class="entry">
+  <div class="wrap wrap-narrow">
+
+    <p class="kicker">Lab 03 · October 2026</p>
+
+    <h1>One Fire, Three Frames: How a Web Map Made the Soberanes Fire 54% Bigger</h1>
+
+    <!-- The six sections. Do not delete a heading. -->
+
+    <h2>The question</h2>
+    <p>
+      How many square kilometres burned in the 2016 Soberanes Fire in Monterey County, California, and how much
+      does that figure change with the projection it is measured in, the resolution of the imagery behind the
+      boundary, and the terrain it burned across?
+    </p>
+
+    <h2>The data</h2>
+    <ul>
+      <li><strong>Perimeter.</strong> <code>Soberanes_Perimeter</code>, an ArcGIS Online feature layer published
+        by <code>Teach_with_GIS</code> (Esri)
+        (<a href="https://www.arcgis.com/home/search.html?searchTerm=Soberanes_Perimeter%20owner%3ATeach_with_GIS" target="_blank" rel="noopener">item search</a>).
+        One feature, three fields: <code>Id</code>, <code>Shape__Area</code>, <code>Shape__Length</code>.</li>
+      <li><strong>Imagery.</strong> Landsat archive in Esri's
+        <a href="https://livingatlas.arcgis.com/landsatexplorer/" target="_blank" rel="noopener">Landsat Explorer</a>,
+        short-wave infrared renderer, native cell size 30 m. Pre-fire scene <strong>20 June 2016</strong>,
+        post-fire scene <strong>26 October 2016</strong>. The fire burned 22 July to 12 October 2016, so both
+        dates fall outside it. The scenes are 128 days apart, exactly eight 16-day Landsat cycles, which is
+        consistent with the same orbit track.</li>
+      <li><strong>Elevation.</strong> The default world elevation surface in ArcGIS Scene Viewer, used for the
+        3D scene and the elevation profiles.</li>
+      <li><strong>Reference figure.</strong> The incident record's 132,127 acres.</li>
+    </ul>
+    <p>Two things I found inside the file:</p>
+    <ul>
+      <li><strong>The coordinate system is only in the service definition.</strong> <code>Shape__Area</code>
+        (824,638,034 m²) and <code>Shape__Length</code> (556,808 m) look like facts about the fire. The service's
+        <code>spatialReference</code> block reads <code>wkid 102100</code> (latest WKID 3857), which epsg.io lists as
+        WGS 84 / Pseudo-Mercator, i.e. Web Mercator. So both numbers are measurements on a Mercator sheet. The
+        frame is not on the map, legend, pop-up or attribute table. I would have met it only when a figure failed
+        a sanity check, if ever.</li>
+      <li><strong>The polygon is a raster traced into vectors.</strong> The lab's own service query reports
+        690 rings in WGS 84 (755 in Web Mercator). The largest ring holds 99.986% of the area, and 686 rings are
+        smaller than one 30 m Landsat cell (900 m²). These counts are the brief's, not mine; I did not rerun
+        <code>Count(Geometry($feature).rings)</code>.</li>
+    </ul>
+
+    <h2>The method</h2>
+    <p>
+      I opened the layer in ArcGIS Online Map Viewer and read the service definition at the layer's
+      <code>/query?where=1=1&amp;outFields=*&amp;returnGeometry=false&amp;f=pjson</code> endpoint. I then added
+      this Arcade expression to the pop-up. <code>Area</code> does planar arithmetic on the stored (Web Mercator)
+      coordinates; <code>AreaGeodetic</code> measures on the WGS 84 ellipsoid.
+    </p>
+    <pre class="method-code"><code>// Two ways to measure one polygon.
+var planar = Area($feature, 'square-kilometers');
+var globe  = AreaGeodetic($feature, 'square-kilometers');
+var acres  = AreaGeodetic($feature, 'acres');
+
+return 'planar   ' + Round(planar, 3) + ' km2'
+   + TextFormatting.NewLine
+   + 'geodetic ' + Round(globe,  3) + ' km2'
+   + TextFormatting.NewLine
+   + 'geodetic ' + Round(acres,  0) + ' acres'
+   + TextFormatting.NewLine
+   + 'ratio    ' + Round(planar / globe, 4);</code></pre>
+    <p>
+      The pop-up returned <code>planar 824.323 km²</code>, <code>geodetic 533.891 km²</code>,
+      <code>131,927 acres</code> and <code>ratio 1.544</code>. I traced the burn by hand with Map Viewer's
+      Measurement tool (twelve clicks; this tool measures geodetically, so it compares with
+      <code>AreaGeodetic</code>). Planar UTM 10N (533.929 km²) and California Albers (534.182 km²) are the
+      brief's given values, because a layer I don't own cannot be reprojected in ArcGIS Online.
+    </p>
+    <p>
+      <strong>Projection prediction.</strong> Web Mercator inflates linear scale by sec(φ) and area by sec²(φ).
+      I computed sec²(φ) − 1 for six latitudes before comparing with the measurement.
+      <strong>Grid band.</strong> I took the uncertainty in area as the geodetic perimeter (441.955 km) times
+      the cell size, against the geodetic area (534.182 km², the brief's value, which is 0.05% above my own
+      reading). <strong>Terrain.</strong> In Scene Viewer I drew two Elevation Profile lines across the burn,
+      read the average slope of each, and multiplied the geodetic area by 1/cos(slope).
+      <strong>Vertical datum.</strong> I read geoid separation N from the GeographicLib geoid calculator under
+      EGM2008, EGM96 and EGM84, and converted heights with h = H + N. The conversion in the write-up uses
+      EGM2008, the most recent of the three.
+    </p>
+
+    <h2>The map</h2>
+    <p class="link-row">
+      <!-- Replace both URLs with your own shared links before publishing. -->
+      Live files:
+      <a href="REPLACE_WITH_WEB_MAP_URL" target="_blank" rel="noopener">saved web map</a> ·
+      <a href="REPLACE_WITH_SCENE_URL" target="_blank" rel="noopener">saved scene</a>.
+    </p>
+
+    <div class="fig-pair">
+      <figure>
+        <img src="lab03-fig1a-swipe-june.jpg"
+             alt="Landsat short-wave infrared view of the Monterey coast on 20 June 2016. Vegetation is uniformly green from Monterey south along the Big Sur coast, with no burn scar.">
+        <figcaption>
+          Figure 1a. Before: Landsat short-wave infrared, 20 June 2016, left scene of the swipe. Healthy
+          vegetation is green; no scar. Landsat Explorer display (Web Mercator), 1:379,362, 1 screen pixel = 100 m.
+          No area is measured here.
+        </figcaption>
+      </figure>
+      <figure>
+        <img src="lab03-fig1b-swipe-october.jpg"
+             alt="The same view on 26 October 2016. A large pink-red burn scar covers the Santa Lucia Range south of Carmel toward Big Sur.">
+        <figcaption>
+          Figure 1b. After: 26 October 2016, right scene. The burn scar shows as pink-red along the coastal
+          range south of Carmel; same scale and frame as 1a. The isolated red patch east of Soledad lies outside
+          the Soberanes perimeter; I did not identify it.
+        </figcaption>
+      </figure>
+    </div>
+
+    <figure>
+      <img src="lab03-fig2-cells.jpg"
+           alt="Heavily magnified short-wave infrared view of a burn edge, pink burned ground on the left and bright green unburned vegetation on the right, with a soft blurred transition between them.">
+      <figcaption>
+        Figure 2. The post-fire scene (26 October 2016) magnified far beyond its 30 m cell size, on a ridge where
+        the burn edge runs. Landsat Explorer interpolates between cells, so the squares appear as a soft blur,
+        and the burned-to-unburned change is a gradient about a cell or two wide, not a line. Unit: Landsat cell,
+        30 m on a side. Frame: Landsat Explorer display (Web Mercator).
+      </figcaption>
+    </figure>
+
+    <figure>
+      <img src="lab03-fig3-perimeter.jpg"
+           alt="The Soberanes perimeter drawn as a black outline with no fill over a pale terrain basemap, running as a jagged line of straight segments.">
+      <figcaption>
+        Figure 3. The published perimeter (outline, no fill) at about the same location as Figure 2. It is
+        drawn as a smooth line of straight segments; nothing in it shows the 30 m cells it came from. Spot
+        heights on the basemap are in feet. Frame: Map Viewer display, Web Mercator; the stored geometry is
+        EPSG:3857.
+      </figcaption>
+    </figure>
+
+    <figure>
+      <img src="lab03-fig4-terrain.jpg"
+           alt="Oblique 3D view from the Pacific looking inland. The red Soberanes perimeter is draped over the steep Santa Lucia Range between the Big Sur coast and the Carmel and Salinas valleys.">
+      <figcaption>
+        Figure 4. The perimeter draped on the world elevation surface in Scene Viewer, looking inland from the
+        Pacific. The range rises from the coast to the crest within a few kilometres. Unit: none (view only).
+        Frame: scene view; perimeter geometry EPSG:3857, areas in this entry geodetic on WGS 84.
+      </figcaption>
+    </figure>
+
+    <h2>What I found</h2>
+
+    <p class="frame-line">Areas measured geodetically on the WGS 84 ellipsoid.
+Source geometry stored in EPSG:3857 (Web Mercator);
+planar areas in that frame are inflated by sec^2(phi)
+and are reported here only for comparison.</p>
+
+    <h3>Frames table</h3>
+    <div class="table-scroll">
+    <table class="sensitivity-table">
+      <thead>
+        <tr>
+          <th>Frame</th>
+          <th class="num">Area (km²)</th>
+          <th class="num">vs. geodetic</th>
+          <th>How I got it</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Web Mercator, planar</td>
+          <td class="num">824.323</td>
+          <td class="num">+54.4%</td>
+          <td><code>Area()</code>. <code>Shape__Area</code> says 824.638 (+0.04%), which I did not investigate.</td>
+        </tr>
+        <tr class="hl">
+          <td>WGS 84 ellipsoid, geodetic</td>
+          <td class="num">533.891</td>
+          <td class="num">0</td>
+          <td><code>AreaGeodetic()</code></td>
+        </tr>
+        <tr>
+          <td>My hand-traced polygon</td>
+          <td class="num">542.68</td>
+          <td class="num">+1.6%</td>
+          <td>Measurement tool, twelve clicks</td>
+        </tr>
+        <tr>
+          <td>Published incident figure</td>
+          <td class="num">534.699</td>
+          <td class="num">+0.15%</td>
+          <td>132,127 acres × 0.00404686</td>
+        </tr>
+        <tr>
+          <td>UTM zone 10N, planar</td>
+          <td class="num">533.929</td>
+          <td class="num">+0.01%</td>
+          <td>Given</td>
+        </tr>
+        <tr>
+          <td>California Albers, planar</td>
+          <td class="num">534.182</td>
+          <td class="num">+0.05%</td>
+          <td>Given</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      Four rows agree within 0.15%: geodetic, UTM, Albers and the agency figure. My hand trace is 1.6% off using
+      twelve vertices and no care, while the Web Mercator row is 54% off. The error in this workflow lives in the
+      frame, not in the tracing. The agency's figure agrees with the geodetic and equal-area rows, so it was
+      almost certainly not computed in Web Mercator. I would have to read the incident record's metadata for the
+      stated projection to be sure.
+    </p>
+    <p>
+      <strong>Prediction check.</strong> sec²(36.326°) = 1.5406. My measured ratio is 1.5440, within 0.2%, from
+      one cosine. That licenses a rule for any web map: a planar area read at latitude φ is the true area times
+      sec²(φ), a known multiple and not an unknown error, so it can be corrected by cos²(φ). The rule holds
+      for small extents; the fire spans about a third of a degree of latitude, which is probably the 0.2%. The
+      perimeters agree less cleanly (556.808 / 441.955 = 1.26; 1.26² = 1.59, against 1.54 for areas), for the
+      same reason.
+    </p>
+    <p>
+      <strong>What else has this affected?</strong> In Lab 2, I read the predominant-party map by how much red
+      or blue covered the page. At Montana's latitude (about 47°) Web Mercator inflates area by about 115%
+      (sec² = 2.15), so northern counties looked more than twice as large as southern ones of equal size.
+    </p>
+
+    <h3>Sensitivity 1: the same polygon at six latitudes</h3>
+    <div class="table-scroll">
+    <table class="sensitivity-table">
+      <thead>
+        <tr>
+          <th>Place</th>
+          <th class="num">Latitude</th>
+          <th class="num">sec²(φ)</th>
+          <th class="num">Web Mercator areal inflation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Equator</td><td class="num">0.000°</td><td class="num">1.000</td><td class="num">0%</td></tr>
+        <tr><td>Gibson Desert, Western Australia</td><td class="num">−23.285°</td><td class="num">1.185</td><td class="num">+18.5%</td></tr>
+        <tr><td>This campus, Pudong</td><td class="num">31.162°</td><td class="num">1.366</td><td class="num">+36.6%</td></tr>
+        <tr><td>Madeira, Portugal</td><td class="num">32.750°</td><td class="num">1.414</td><td class="num">+41.4%</td></tr>
+        <tr class="hl"><td>Soberanes Fire, California</td><td class="num">36.326°</td><td class="num">1.541</td><td class="num">+54.1%</td></tr>
+        <tr><td>Fairbanks, Alaska</td><td class="num">64.840°</td><td class="num">5.532</td><td class="num">+453.2%</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      For my own project's study area, the one-line methods figure is the sec²(φ) − 1 value at its latitude,
+      and it goes into the proposal. Inflation is a property of latitude, not software: no better library
+      avoids it.
+    </p>
+
+    <h3>Sensitivity 2: the same fire at four cell sizes</h3>
+    <p>
+      Band = perimeter × cell size, using the geodetic perimeter (441.955 km) and area (534.182 km²).
+    </p>
+    <div class="table-scroll">
+    <table class="sensitivity-table">
+      <thead>
+        <tr>
+          <th>Sensor</th>
+          <th class="num">Cell size</th>
+          <th class="num">Band (km²)</th>
+          <th class="num">Share of area</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Sentinel-2</td><td class="num">10 m</td><td class="num">4.420</td><td class="num">0.83%</td></tr>
+        <tr class="hl"><td>Landsat 8-9</td><td class="num">30 m</td><td class="num">13.259</td><td class="num">2.48%</td></tr>
+        <tr><td>MODIS</td><td class="num">250 m</td><td class="num">110.489</td><td class="num">20.7%</td></tr>
+        <tr><td>A coarse global product</td><td class="num">500 m</td><td class="num">220.978</td><td class="num">41.4%</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      At Landsat resolution the grid band is 2.5% of the area and the projection error is 54%, so the frame is
+      more than twenty times the grid. At 500 m the band (41%) approaches the projection error. The ranking is a
+      fact about this fire, this latitude and this sensor. It would flip near the equator, where the projection
+      term is zero and even a Landsat band would outrank it.
+    </p>
+    <p>
+      <strong>The boundary is a staircase.</strong> Every decision about where burned ground stops was made one
+      cell at a time. A feature narrower than a cell either vanishes or fills a whole cell, and the file does not
+      say which. I did not measure a finger of burn against the 30 m cell in Map Viewer, so I make no claim
+      about a specific finger. The structure of the file shows the same thing. The isoperimetric ratio
+      4πA/P² is 0.0334 for the stored Web Mercator pair and 0.0344 for the geodetic pair, where a circle gives 1.
+      A circle of 534 km² would have a circumference of about 82 km, and the file claims 442 km. The stored
+      geometry records detail the sensor could not have seen. Area is robust to this and perimeter is not, so I
+      would publish the area and publish the perimeter only with its resolution stated beside it.
+    </p>
+
+    <h3>Geoid separation (N, metres)</h3>
+    <div class="table-scroll">
+    <table class="sensitivity-table">
+      <thead>
+        <tr>
+          <th>Point</th>
+          <th class="num">EGM2008</th>
+          <th class="num">EGM96</th>
+          <th class="num">EGM84</th>
+          <th class="num">Spread</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Soberanes Fire</td><td class="num">−32.9779</td><td class="num">−34.0791</td><td class="num">−34.7582</td><td class="num">1.7803</td></tr>
+        <tr><td>This campus</td><td class="num">+12.1533</td><td class="num">+11.4482</td><td class="num">+11.6075</td><td class="num">0.7051</td></tr>
+        <tr><td>Everest</td><td class="num">−28.4939</td><td class="num">−28.7408</td><td class="num">−30.4587</td><td class="num">1.9648</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      With h = H + N, a receiver reporting an ellipsoidal height of 900 m at the fire sits at
+      H = 900 − (−32.978) = <strong>932.98 m</strong> orthometric under EGM2008. EGM96 gives 934.08 m and EGM84
+      934.76 m. The conversion needs a model, and the choice of model moves the answer by up to 1.8 m, so the
+      model belongs in the methods. Runoff follows gravity, not an ellipsoid, so a drainage model needs the
+      orthometric height H. Using the ellipsoidal height would put the surface tens of metres off, 33 m at the
+      fire, and the error varies across the area.
+    </p>
+
+    <h3>Terrain: area on a slope</h3>
+    <p>
+      My two elevation profiles gave average slopes of 20.7° and 19.7°, so the correction factors are 1.0690 and
+      1.0622. Applied to the geodetic area of 534.182 km², the ground surface is <strong>at least 567.4 to
+      571.0 km²</strong>, about 6 to 7% more than the planimetric shadow. This is a lower bound, because
+      applying the cosine to an average slope understates surface area on steep ground. Of the three
+      effects the terrain is second: 6 to 7% against 54% for projection and 2.5% for the grid.
+    </p>
+
+    <h3>One mountain, two numbers</h3>
+    <p>
+      Nepal's pre-2020 height was 8,848 m (Survey of India, 1954), measured to the snow and ice on top. China's
+      2005 survey gave 8,844.43 m, measured to the rock beneath. The two governments announced a joint figure of
+      8,848.86 m on 8 December 2020. The gap is 3.57 m, and China's own 2005 survey put the snow and ice at about
+      3.5 m, so almost all of it was disagreement about what "height" means, not about measurement quality.
+    </p>
+
+    <h3>The number I would publish</h3>
+    <table class="sensitivity-table report-table">
+      <thead>
+        <tr>
+          <th>Question</th>
+          <th>Answer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Publish</td>
+          <td>533.9 km² (about 131,900 acres), measured geodetically on WGS 84, from a 30 m Landsat-derived
+            boundary.</td>
+        </tr>
+        <tr>
+          <td>Trusting the attribute table</td>
+          <td>824.6 km² (about 203,800 acres), which is 290.7 km² or 54% too high.</td>
+        </tr>
+        <tr>
+          <td>For ground actually burned</td>
+          <td>At least 567 km², stated as a lower bound.</td>
+        </tr>
+        <tr>
+          <td>Check before publishing</td>
+          <td>The <code>spatialReference</code> in the service, that <code>AreaGeodetic</code> was used, and
+            agreement with an equal-area projection and the agency figure.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Written reflection</h3>
+    <p>
+      I would publish 533.9 km² (about 131,900 acres), measured geodetically on WGS 84 from a 30 m boundary.
+      Before publishing I would confirm the layer's <code>spatialReference</code> and check the result against
+      an equal-area projection and the agency's 132,127 acres; four independent rows agree within 0.15%. If I
+      had trusted the attribute table I would have published 824.6 km², 54% too high.
+    </p>
+    <p>
+      The ranking here is projection (54%), then terrain (6 to 7%), then grid (2.5%). It would flip near the
+      equator, where projection error vanishes, on steeper ground, or with a 500 m product, whose band is
+      41%. Terrain is the one I could not have found from inside the file. The projection is in the service
+      definition and the grid leaves traces, such as 686 rings smaller than a cell. A two-dimensional polygon
+      carries no elevation at all.
+    </p>
+    <p>
+      Suppression cost is the use I would worry about. Soberanes cost about $260 million. Divided by the
+      display-frame acreage it comes to about $1,280 per acre; divided by the real acreage, about $1,970.
+      Fire-agency budget planners who benchmark against that figure would plan for suppression costs 35% too
+      low, and the next large fire would be under-funded.
+    </p>
+
+    <h2>What this does not show</h2>
+    <div class="limits">
+      <p>
+        <strong>Resolution.</strong> The perimeter cannot be located more precisely than one 30 m cell, so
+        anything it implies below that scale is an artefact. The perimeter length (442 km) is not a measurement I
+        would stand behind. <strong>Terrain.</strong> The slope correction is a lower bound from two profile
+        lines, not a surface integral over the whole burn. <strong>Vertical datum.</strong> The geoid models
+        differ by up to 1.96 m, and I used EGM2008 without validating it against ground control. The 686-ring and
+        690-ring counts come from the lab brief and were not rerun. I did not trace or measure a narrow finger
+        against the cell size, and I did not explain the 0.04% gap between <code>Shape__Area</code> and
+        <code>Area()</code>. Finally, the Landsat scenes are four months apart, so the scar could include
+        post-fire change, and I did not classify it; the perimeter is taken as published.
+      </p>
+      <p>
+        <strong>AI use:</strong> AI-assisted for checking my Arcade syntax, my calculations, and the structure
+        of this entry, using Claude. I verified it by comparing the returned geodetic area against the
+        Measurement tool, the UTM and Albers values, and the published acreage, and by recomputing every table
+        independently. The frames, the measurements and the interpretation are my own.
+      </p>
+    </div>
+
+    <a class="back" href="../index.html#labs">← Back to all labs</a>
+
+  </div>
+</article>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap wrap-narrow">
+    <p>Addie Manh Dung Nguyen · SOCS-SHU 205 · NYU Shanghai · Fall 2026</p>
+  </div>
+</footer>
+
+</body>
+</html>
