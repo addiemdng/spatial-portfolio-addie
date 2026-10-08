@@ -65,41 +65,21 @@
 
     <h2>The question</h2>
     <p>
-      How many square kilometres burned in the 2016 Soberanes Fire in Monterey County, California, and how much
-      does that figure change with the projection it is measured in, the resolution of the imagery behind the
-      boundary, and the terrain it burned across?
+How many square kilometres burned in the 2016 Soberanes Fire in Monterey County, California? More importantly, how much can that number change depending on the projection used to measure the boundary, the resolution of the imagery used to create it, and the terrain across which the fire burned?
     </p>
 
     <h2>The data</h2>
-    <ul>
-      <li><strong>Perimeter.</strong> <code>Soberanes_Perimeter</code>, an ArcGIS Online feature layer published
-        by <code>Teach_with_GIS</code> (Esri)
-        (<a href="https://www.arcgis.com/home/search.html?searchTerm=Soberanes_Perimeter%20owner%3ATeach_with_GIS" target="_blank" rel="noopener">item search</a>).
-        One feature, three fields: <code>Id</code>, <code>Shape__Area</code>, <code>Shape__Length</code>.</li>
-      <li><strong>Imagery.</strong> Landsat archive in Esri's
-        <a href="https://livingatlas.arcgis.com/landsatexplorer/" target="_blank" rel="noopener">Landsat Explorer</a>,
-        short-wave infrared renderer, native cell size 30 m. Pre-fire scene <strong>20 June 2016</strong>,
-        post-fire scene <strong>26 October 2016</strong>. The fire burned 22 July to 12 October 2016, so both
-        dates fall outside it. The scenes are 128 days apart, exactly eight 16-day Landsat cycles, which is
-        consistent with the same orbit track.</li>
-      <li><strong>Elevation.</strong> The default world elevation surface in ArcGIS Scene Viewer, used for the
-        3D scene and the elevation profiles.</li>
-      <li><strong>Reference figure.</strong> The incident record's 132,127 acres.</li>
-    </ul>
-    <p>Two things I found inside the file:</p>
-    <ul>
-      <li><strong>The coordinate system is only in the service definition.</strong> <code>Shape__Area</code>
-        (824,638,034 m²) and <code>Shape__Length</code> (556,808 m) look like facts about the fire. The service's
-        <code>spatialReference</code> block reads <code>wkid 102100</code> (latest WKID 3857), which epsg.io lists as
-        WGS 84 / Pseudo-Mercator, i.e. Web Mercator. So both numbers are measurements on a Mercator sheet. The
-        frame is not on the map, legend, pop-up or attribute table. I would have met it only when a figure failed
-        a sanity check, if ever.</li>
-      <li><strong>The polygon is a raster traced into vectors.</strong> The lab's own service query reports
-        690 rings in WGS 84 (755 in Web Mercator). The largest ring holds 99.986% of the area, and 686 rings are
-        smaller than one 30 m Landsat cell (900 m²). These counts are the brief's, not mine; I did not rerun
-        <code>Count(Geometry($feature).rings)</code>.</li>
-    </ul>
+   <p>The main dataset is the Soberanes_Perimeter feature layer published by Teach_with_GIS through Esri's ArcGIS Online. The layer contains one feature with three fields: Id, Shape__Area, and Shape__Length.</p>
 
+<p>
+For imagery, I used the Landsat archive in Esri's Landsat Explorer with the short-wave infrared renderer. The imagery has a native cell size of 30 m. I compared a pre-fire scene from June 20, 2016 with a post-fire scene from October 26, 2016. The fire itself burned from July 22 to October 12, so neither image was taken during the fire. The two scenes are 128 days apart, or exactly eight 16-day Landsat cycles, which is consistent with them coming from the same orbit track.
+</p>
+    <p>For elevation, I used the default world elevation surface in ArcGIS Scene Viewer. I also used the incident record's reported figure of 132,127 acres as a reference for comparison.
+</p>
+<p>Two things became important once I looked more closely at the data. First, the coordinate system is not obvious from the attribute table. The Shape__Area value is 824,638,034 m², which initially looks like a straightforward measurement of the fire's area. However, the service definition identifies the coordinate system as WKID 102100, the current WKID for WGS 84 / Pseudo-Mercator, or Web Mercator. This means the stored area is a planar measurement in the Web Mercator frame rather than a direct measurement of area on the Earth's surface.
+</p>
+<p>Second, the perimeter appears to have been created from raster data. The lab's service query reports 690 rings in WGS 84 and 755 in Web Mercator, with most of the smaller rings being less than one 30 m Landsat cell. The polygon therefore contains much more geometric detail than the original imagery could directly resolve. This matters more for the shape and perimeter of the boundary than for the overall burned area.</p>
+</p>
     <h2>The method</h2>
     <p>
       I opened the layer in ArcGIS Online Map Viewer and read the service definition at the layer's
@@ -140,71 +120,53 @@ return 'planar   ' + Round(planar, 3) + ' km2'
 
     <h2>The map</h2>
     <p class="link-row">
-      <!-- Replace both URLs with your own shared links before publishing. -->
-      Live files:
-      <a href="REPLACE_WITH_WEB_MAP_URL" target="_blank" rel="noopener">saved web map</a> ·
-      <a href="REPLACE_WITH_SCENE_URL" target="_blank" rel="noopener">saved scene</a>.
-    </p>
+<figure><iframe width="700" height="600" allow="local-network-access; geolocation" title="Lab 3 · One perimeter · Addie Nguyen" src="https://nyuds.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=5056e89d69834b68954130e9739be19d&theme=light&bookmarks=true&heading=true&legend=true&information=true&share=true&basemaps=true&center=-121.69364538631915,36.31923403987055&scale=288895.277144" >      
+   <figcaption>
+        Livemap of the Soberanes fire perimeter in Map Viewer. The black outline denotes the perimeter of the fire.
+      </figcaption>
+</figure>
+<figure>      </iframe><iframe width="650" height="400" frameborder="0" scrolling="no" allowfullscreen src="https://arcg.is/0D14az"></iframe>
+    <figcaption>
+        Live view of the Soberanes terrain in Scene Viewer. The red area denotes the area burned by the fire.
+      </figcaption>
+</figure>
 
     <div class="fig-pair">
       <figure>
-        <img src="lab03-fig1a-swipe-june.jpg"
-             alt="Landsat short-wave infrared view of the Monterey coast on 20 June 2016. Vegetation is uniformly green from Monterey south along the Big Sur coast, with no burn scar.">
+        <img src="lab03-fig1a.png"
         <figcaption>
-          Figure 1a. Before: Landsat short-wave infrared, 20 June 2016, left scene of the swipe. Healthy
-          vegetation is green; no scar. Landsat Explorer display (Web Mercator), 1:379,362, 1 screen pixel = 100 m.
-          No area is measured here.
+Figure 1a. Before: Landsat short-wave infrared imagery from 20 June 2016, showing the area before the Soberanes Fire. Vegetation appears consistently green along the coast south of Monterey toward Big Sur, with no visible burn scar. The image is shown at the same scale and projection as Figure 1b (Web Mercator; 1:379,362; 1 screen pixel = 100 m). 
         </figcaption>
       </figure>
       <figure>
-        <img src="lab03-fig1b-swipe-october.jpg"
-             alt="The same view on 26 October 2016. A large pink-red burn scar covers the Santa Lucia Range south of Carmel toward Big Sur.">
+        <img src="lab03-fig1b.png"
         <figcaption>
-          Figure 1b. After: 26 October 2016, right scene. The burn scar shows as pink-red along the coastal
-          range south of Carmel; same scale and frame as 1a. The isolated red patch east of Soledad lies outside
-          the Soberanes perimeter; I did not identify it.
+Figure 1b. After: Landsat short-wave infrared imagery from 26 October 2016, showing the burn scar across the Santa Lucia Range south of Carmel toward Big Sur. The image uses the same scale and projection as Figure 1a. The isolated red patch east of Soledad is outside the Soberanes perimeter and is not included in this analysis.
         </figcaption>
       </figure>
     </div>
 
     <figure>
-      <img src="lab03-fig2-cells.jpg"
-           alt="Heavily magnified short-wave infrared view of a burn edge, pink burned ground on the left and bright green unburned vegetation on the right, with a soft blurred transition between them.">
+      <img src="lab03-fig2.png"
       <figcaption>
-        Figure 2. The post-fire scene (26 October 2016) magnified far beyond its 30 m cell size, on a ridge where
-        the burn edge runs. Landsat Explorer interpolates between cells, so the squares appear as a soft blur,
-        and the burned-to-unburned change is a gradient about a cell or two wide, not a line. Unit: Landsat cell,
-        30 m on a side. Frame: Landsat Explorer display (Web Mercator).
+       Figure 2. Close-up of the 26 October 2016 post-fire Landsat scene at a burn boundary. The image is magnified well beyond the native 30 m cell size. The transition from burned to unburned vegetation extends across roughly one to two cells rather than forming a sharp line. Landsat Explorer interpolates between cells, making the underlying raster structure appear as a soft transition. Cell size: 30 m × 30 m. Display frame: Web Mercator.
       </figcaption>
     </figure>
 
     <figure>
-      <img src="lab03-fig3-perimeter.jpg"
-           alt="The Soberanes perimeter drawn as a black outline with no fill over a pale terrain basemap, running as a jagged line of straight segments.">
+      <img src="lab03-fig3.png"
       <figcaption>
-        Figure 3. The published perimeter (outline, no fill) at about the same location as Figure 2. It is
-        drawn as a smooth line of straight segments; nothing in it shows the 30 m cells it came from. Spot
-        heights on the basemap are in feet. Frame: Map Viewer display, Web Mercator; the stored geometry is
-        EPSG:3857.
-      </figcaption>
+Figure 3. Published Soberanes Fire perimeter shown as an outline over a terrain basemap at approximately the same location as Figure 2. The boundary appears as a continuous line of straight segments, so the underlying 30 m raster resolution is not visible. Spot elevations are shown in feet. Display frame: Web Mercator; stored geometry: EPSG:3857.      </figcaption>
     </figure>
 
     <figure>
-      <img src="lab03-fig4-terrain.jpg"
-           alt="Oblique 3D view from the Pacific looking inland. The red Soberanes perimeter is draped over the steep Santa Lucia Range between the Big Sur coast and the Carmel and Salinas valleys.">
+      <img src="lab03-fig4.png"
       <figcaption>
-        Figure 4. The perimeter draped on the world elevation surface in Scene Viewer, looking inland from the
-        Pacific. The range rises from the coast to the crest within a few kilometres. Unit: none (view only).
-        Frame: scene view; perimeter geometry EPSG:3857, areas in this entry geodetic on WGS 84.
+    Figure 4. Oblique 3D view of the Soberanes Fire perimeter draped over the world elevation surface, looking inland from the Pacific. The perimeter crosses the steep Santa Lucia Range, which rises from the coast toward the crest over a relatively short distance. The scene is for visualization only; the perimeter geometry is stored in EPSG:3857, while area calculations in this analysis use geodetic measurements on WGS 84.
       </figcaption>
     </figure>
 
     <h2>What I found</h2>
-
-    <p class="frame-line">Areas measured geodetically on the WGS 84 ellipsoid.
-Source geometry stored in EPSG:3857 (Web Mercator);
-planar areas in that frame are inflated by sec^2(phi)
-and are reported here only for comparison.</p>
 
     <h3>Frames table</h3>
     <div class="table-scroll">
@@ -258,24 +220,14 @@ and are reported here only for comparison.</p>
     </table>
     </div>
     <p>
-      Four rows agree within 0.15%: geodetic, UTM, Albers and the agency figure. My hand trace is 1.6% off using
-      twelve vertices and no care, while the Web Mercator row is 54% off. The error in this workflow lives in the
-      frame, not in the tracing. The agency's figure agrees with the geodetic and equal-area rows, so it was
-      almost certainly not computed in Web Mercator. I would have to read the incident record's metadata for the
-      stated projection to be sure.
+The main comparison shows a large difference between the measurements. The Web Mercator planar calculation gives 824.323 km², while the geodetic calculation gives 533.891 km². The UTM, California Albers, and agency figures are all very close to the geodetic result. In fact, four measurements agree within 0.15%.
     </p>
     <p>
-      <strong>Prediction check.</strong> sec²(36.326°) = 1.5406. My measured ratio is 1.5440, within 0.2%, from
-      one cosine. That licenses a rule for any web map: a planar area read at latitude φ is the true area times
-      sec²(φ), a known multiple and not an unknown error, so it can be corrected by cos²(φ). The rule holds
-      for small extents; the fire spans about a third of a degree of latitude, which is probably the 0.2%. The
-      perimeters agree less cleanly (556.808 / 441.955 = 1.26; 1.26² = 1.59, against 1.54 for areas), for the
-      same reason.
+    This suggests that the large discrepancy is mainly caused by the coordinate system rather than by the boundary itself. My hand-traced polygon was only 1.6% larger than the geodetic calculation, despite using only twelve vertices. In contrast, the Web Mercator value was 54% larger. The agency's reported acreage also agrees closely with the geodetic and equal-area measurements. I would still check the incident record's metadata before claiming exactly how the agency calculated its number, but the agreement strongly suggests that it did not use the Web Mercator planar area.
     </p>
     <p>
-      <strong>What else has this affected?</strong> In Lab 2, I read the predominant-party map by how much red
-      or blue covered the page. At Montana's latitude (about 47°) Web Mercator inflates area by about 115%
-      (sec² = 2.15), so northern counties looked more than twice as large as southern ones of equal size.
+The projection result was also close to what I expected mathematically. At the fire's latitude of about 36.3°, sec²(φ) is approximately 1.541, meaning Web Mercator should inflate the area by about 54%. My measured ratio was 1.544, which is within about 0.2% of that prediction. This is useful because it shows that the discrepancy is not an arbitrary software error. It is a predictable consequence of measuring area in Web Mercator at this latitude.
+
     </p>
 
     <h3>Sensitivity 1: the same polygon at six latitudes</h3>
@@ -299,12 +251,9 @@ and are reported here only for comparison.</p>
       </tbody>
     </table>
     </div>
-    <p>
-      For my own project's study area, the one-line methods figure is the sec²(φ) − 1 value at its latitude,
-      and it goes into the proposal. Inflation is a property of latitude, not software: no better library
-      avoids it.
-    </p>
-
+<p>
+  The projection effect changes substantially with latitude. At the equator, Web Mercator produces no areal inflation, while at higher latitudes the inflation becomes much larger. At the Soberanes Fire's latitude, the expected inflation is about 54%. At Fairbanks, Alaska, it would be more than 450%.
+</p>
     <h3>Sensitivity 2: the same fire at four cell sizes</h3>
     <p>
       Band = perimeter × cell size, using the geodetic perimeter (441.955 km) and area (534.182 km²).
@@ -328,20 +277,12 @@ and are reported here only for comparison.</p>
     </table>
     </div>
     <p>
-      At Landsat resolution the grid band is 2.5% of the area and the projection error is 54%, so the frame is
-      more than twenty times the grid. At 500 m the band (41%) approaches the projection error. The ranking is a
-      fact about this fire, this latitude and this sensor. It would flip near the equator, where the projection
-      term is zero and even a Landsat band would outrank it.
+The grid introduces a different kind of uncertainty. Using the perimeter and cell size to estimate a boundary band, the 30 m Landsat data produce an uncertainty of about 13.3 km², or 2.5% of the fire's area. This is much smaller than the 54% projection difference.The relationship changes with coarser imagery. A 250 m product would produce an estimated uncertainty of about 20.7%, while a 500 m product would reach about 41.4%. At that point, the grid effect becomes much closer to the projection effect. The ranking is therefore not universal. It depends on both the location of the fire and the resolution of the data.
+
     </p>
     <p>
-      <strong>The boundary is a staircase.</strong> Every decision about where burned ground stops was made one
-      cell at a time. A feature narrower than a cell either vanishes or fills a whole cell, and the file does not
-      say which. I did not measure a finger of burn against the 30 m cell in Map Viewer, so I make no claim
-      about a specific finger. The structure of the file shows the same thing. The isoperimetric ratio
-      4πA/P² is 0.0334 for the stored Web Mercator pair and 0.0344 for the geodetic pair, where a circle gives 1.
-      A circle of 534 km² would have a circumference of about 82 km, and the file claims 442 km. The stored
-      geometry records detail the sensor could not have seen. Area is robust to this and perimeter is not, so I
-      would publish the area and publish the perimeter only with its resolution stated beside it.
+      The fire boundary ultimately comes from decisions made at the scale of individual raster cells. A feature smaller than one cell may disappear, while another feature may occupy an entire cell. The polygon does not tell me exactly what happened within those cells.
+The geometry also contains a surprisingly large amount of detail compared with what the imagery could have resolved. The isoperimetric ratio is only about 0.033–0.034, compared with 1 for a perfect circle. A circle with an area of about 534 km² would have a circumference of roughly 82 km, while the stored geometry has a perimeter of about 442 km. This does not mean that the area is necessarily wrong, but it does make me much less confident in the perimeter as a precise measurement. I would therefore report the area while clearly stating the 30 m resolution, but I would not present the 442 km perimeter as an exact ground measurement.
     </p>
 
     <h3>Geoid separation (N, metres)</h3>
@@ -389,69 +330,28 @@ and are reported here only for comparison.</p>
       3.5 m, so almost all of it was disagreement about what "height" means, not about measurement quality.
     </p>
 
-    <h3>The number I would publish</h3>
-    <table class="sensitivity-table report-table">
-      <thead>
-        <tr>
-          <th>Question</th>
-          <th>Answer</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Publish</td>
-          <td>533.9 km² (about 131,900 acres), measured geodetically on WGS 84, from a 30 m Landsat-derived
-            boundary.</td>
-        </tr>
-        <tr>
-          <td>Trusting the attribute table</td>
-          <td>824.6 km² (about 203,800 acres), which is 290.7 km² or 54% too high.</td>
-        </tr>
-        <tr>
-          <td>For ground actually burned</td>
-          <td>At least 567 km², stated as a lower bound.</td>
-        </tr>
-        <tr>
-          <td>Check before publishing</td>
-          <td>The <code>spatialReference</code> in the service, that <code>AreaGeodetic</code> was used, and
-            agreement with an equal-area projection and the agency figure.</td>
-        </tr>
-      </tbody>
-    </table>
-
     <h3>Written reflection</h3>
     <p>
-      I would publish 533.9 km² (about 131,900 acres), measured geodetically on WGS 84 from a 30 m boundary.
-      Before publishing I would confirm the layer's <code>spatialReference</code> and check the result against
-      an equal-area projection and the agency's 132,127 acres; four independent rows agree within 0.15%. If I
-      had trusted the attribute table I would have published 824.6 km², 54% too high.
+      I would publish **533.9 km² (about 131,900 acres)**, measured geodetically on the WGS 84 ellipsoid from the 30 m Landsat-derived boundary. Before publishing it, I would check the layer’s spatial reference, make sure the area was measured geodetically rather than as a planar Web Mercator area, and compare it with an equal-area projection and the agency’s reported 132,127 acres. These checks matter because the different measurements agree within about 0.15%, while the attribute table gives a very different result. If I had simply trusted the attribute table, I would have published **824.6 km²**, which is about **290.7 km², or 54% too high**. The attribute value looks precise, but the problem is that it is measuring the polygon in Web Mercator rather than measuring its actual area on the Earth’s surface.
     </p>
     <p>
-      The ranking here is projection (54%), then terrain (6 to 7%), then grid (2.5%). It would flip near the
-      equator, where projection error vanishes, on steeper ground, or with a 500 m product, whose band is
-      41%. Terrain is the one I could not have found from inside the file. The projection is in the service
-      definition and the grid leaves traces, such as 686 rings smaller than a cell. A two-dimensional polygon
-      carries no elevation at all.
+     For this fire, I would rank the three sources of disagreement as **projection first, terrain second, and grid resolution third**: 54% from Web Mercator, about 6–7% from the slope of the terrain, and about 2.5% from the 30 m grid. That ranking would change if the fire were closer to the equator, where Web Mercator’s area inflation becomes much smaller, or if the imagery were much coarser; for example, the 500 m grid produces an uncertainty band of about 41%. Steeper terrain could also make the terrain effect larger than the projection effect. Of these three, **terrain is the one I could not have discovered from the file itself**, because the polygon is two-dimensional and contains no elevation information.
     </p>
     <p>
-      Suppression cost is the use I would worry about. Soberanes cost about $260 million. Divided by the
-      display-frame acreage it comes to about $1,280 per acre; divided by the real acreage, about $1,970.
-      Fire-agency budget planners who benchmark against that figure would plan for suppression costs 35% too
-      low, and the next large fire would be under-funded.
+One use where this difference matters is **fire-agency budgeting for suppression costs**. If planners used the Web Mercator acreage without realizing it was inflated, they would be dividing the roughly $260 million Soberanes Fire cost across too many acres. That gives about **$1,280 per acre instead of roughly $1,970 per acre** using the geodetic area. In practice, this could make a fire look less expensive to suppress per acre than it really was and could affect how agencies benchmark costs or plan resources for future fires. The people most affected would be **fire-agency budget planners and communities that depend on those resources**, because an inflated acreage denominator could make future funding needs look smaller than they actually are.
     </p>
 
     <h2>What this does not show</h2>
     <div class="limits">
       <p>
-        <strong>Resolution.</strong> The perimeter cannot be located more precisely than one 30 m cell, so
-        anything it implies below that scale is an artefact. The perimeter length (442 km) is not a measurement I
-        would stand behind. <strong>Terrain.</strong> The slope correction is a lower bound from two profile
-        lines, not a surface integral over the whole burn. <strong>Vertical datum.</strong> The geoid models
-        differ by up to 1.96 m, and I used EGM2008 without validating it against ground control. The 686-ring and
-        690-ring counts come from the lab brief and were not rerun. I did not trace or measure a narrow finger
-        against the cell size, and I did not explain the 0.04% gap between <code>Shape__Area</code> and
-        <code>Area()</code>. Finally, the Landsat scenes are four months apart, so the scar could include
-        post-fire change, and I did not classify it; the perimeter is taken as published.
+      There are several limits to this analysis. The perimeter comes from 30 m imagery, so I would not interpret features smaller than that resolution as precise. This is especially important for the 442 km perimeter, which is much more sensitive to small boundary details than the overall area.
+      </p>
+      <p>The terrain correction is also only an estimate based on two elevation profiles. It is not a full surface-area calculation across the entire fire. Similarly, the geoid comparison shows how much the choice of model can matter, but I did not validate the model against ground control.
+</p>
+<p>There are also some things I did not independently verify. The ring counts came from the lab brief, and I did not rerun them myself. I did not investigate the small difference between Shape__Area and the Area() result. Finally, the Landsat scenes are four months apart, so the post-fire image could contain changes that occurred after the fire itself. I used the published perimeter rather than trying to classify those changes independently.
+</p>
+<p>
+Overall, the most important limitation is that these numbers should not be treated as equally certain just because they are reported to several decimal places. The projection, imagery resolution, terrain, and measurement method all describe different parts of the uncertainty. For this fire, the projection is clearly the largest issue, but that conclusion depends on the specific location and data resolution used.
       </p>
       <p>
         <strong>AI use:</strong> AI-assisted for checking my Arcade syntax, my calculations, and the structure
