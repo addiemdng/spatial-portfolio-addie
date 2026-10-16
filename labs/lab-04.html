@@ -28,19 +28,13 @@
 <h2>The question</h2>
 <p>
       How many square kilometers is Shanghai’s Putuo District, and how much does the estimate change with the
-      projection, the cell size and where the grid starts?
+      projection, the cell size, and where the grid starts?
     </p>
 <h2>The data</h2>
-<p>
-      The course provided two files through Brightspace in October 2026
-      <!-- EDIT: add the exact download date here if you have it. -->.
-      Each file has limitations that need to be understood before using it.
-    </p>
 <ul>
 <li><strong>The survey.</strong> <code>LAB04_shanghai-lockdown-survey.csv</code> holds 3,348 respondents
         from Shanghai's 2022 lockdown: district, neighborhood (<code>Jiedao/town</code>), a geocoded
-        coordinate, and depression, anxiety and food-insecurity scores. The file states no publisher, licence
-        or sampling design.</li>
+        coordinate, and depression, anxiety, and food-insecurity scores. The file states no publisher, licence, or sampling design.</li>
 <li><strong>The encoding.</strong> QGIS guessed UTF-8 and garbled <code>Jiedao/town</code> and
         <code>GPS info</code>. The file is GB18030, and nothing in it says so; I recovered that from the
         failure.</li>
@@ -48,7 +42,7 @@
         rows (16.5%) read (空), "empty". They have no coordinate, so QGIS dropped them without comment: the
         point layer holds 2,795 of 3,348 respondents.</li>
 <li><strong>Precision is not accuracy.</strong> 2,494 coordinates print six decimals (about 0.10 m), yet
-        245 respondents sit in a different district from the one their record names, and eleven share one
+        245 respondents sit in a different district from the one their records name, and eleven share one
         coordinate. Those 2,494 rows worry me more than the six coarse ones at 95 m: they claim a precision the
         file itself disproves.</li>
 <li><strong>Addresses removed.</strong> <code>GPS info</code> once held full postal addresses. They were
@@ -57,32 +51,31 @@
         know what respondents agreed could be published; the file records none of it.</li>
 <li><strong>The boundaries.</strong> <code>LAB04_shanghai-districts.geojson</code> holds Shanghai's 16
         districts from DataV.GeoAtlas (Alibaba, geo.datav.aliyun.com), with the official codes. It states no
-        licence, accuracy figure or contact, so I record its terms as not stated. Per the lab brief, the
+        licence, accuracy figure, or contact, so I record its terms as not stated. Per the lab brief, the
         licensed alternatives (geoBoundaries, GADM) still list Nanhui, abolished in 2009: the accurate file has
-        no licence, and the licensed files are wrong. The <code>survey_code</code> field (1–16) was derived for
+        no license, and the licensed files are wrong. The <code>survey_code</code> field (1–16) was derived for
         the lab by joining points to polygons; it is not in the source.</li>
 </ul>
 <h2>The method</h2>
 <p>
       I conducted all spatial analysis in QGIS 3.44 LTR. I loaded the survey as a delimited-text layer using GB18030 encoding,
       X = <code>longitude</code>, Y = <code>latitude</code>, EPSG:4326) and the districts as GeoJSON. At the
-      start I recorded the project ellipsoid: WGS 84 (EPSG:7030), area in square meters.
+      start, I recorded the project ellipsoid: WGS 84 (EPSG:7030), area in square meters.
     </p>
 <p>
 <strong>Frames.</strong> I compared <code>area($geometry)</code>, which is planar in the layer's own CRS,
       with <code>$area</code>, which follows the project ellipsoid. I then exported the districts to GeoPackage
       in four CRSs (EPSG:3857, 32651, 4549, 4547), ran <code>area($geometry)</code> on each and summed the
       sixteen features with Basic statistics for fields. The geodetic total, 7,988.523 km², was supplied by the
-      lab. After that, everything used EPSG:32651 (WGS 84 / UTM 51N): the project CRS, the reprojected districts
-      and the reprojected survey points.
+      lab. After that, everything used EPSG:32651 (WGS 84 / UTM 51N): the project CRS, the reprojected districts, and the reprojected survey points.
     </p>
 <p>
 <strong>Consistency.</strong> I used Join Attributes by Location with the reprojected points as the base layer and
       the reprojected districts, predicate <em>are within</em>, fields <code>survey_code</code> and
       <code>name_en</code>, one-to-one on the first match. A <code>mismatch</code> field,
       <code>if(to_int("District") != "survey_code", 1, 0)</code>, flagged disagreements, and Basic statistics
-      for fields counted them. With the Measure Line tool I measured eight flagged points to the nearest edge of
-      the district their record claims. I counted distinct coordinates to find shared ones.
+      for fields counted them. With the Measure Line tool, I measured eight flagged points to the nearest edge of
+      the district, as their record claims. I counted distinct coordinates to find shared ones.
     </p>
 <p>
 <strong>Rasters.</strong> I used GDAL Rasterize (vector to raster) on the EPSG:32651 district layer, burning in the field
