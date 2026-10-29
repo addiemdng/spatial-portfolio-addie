@@ -31,45 +31,16 @@
       10 km bands outward from the Huangpu centroid?
     </p>
 <p>
-      Categories 3 and 4 are moderately and severely food insecure. The four bands are 0–10, 10–20, 20–30 and
-      30+ km, set before I saw any result.
+      Food insecurity categories 3 and 4 indicate moderate and severe food insecurity. I divided the city into four distance bands: 0–10, 10–20, 20–30, and 30+ km.
     </p>
 <h2>The data</h2>
-<ul>
-<li><strong>The survey.</strong> <code>LAB04_shanghai-lockdown-survey.csv</code> holds 3,348 respondents to
-        the 2022 Shanghai Lockdown Study, an online survey run by NYU Shanghai between 29 April and 1 June 2022.
-        It was distributed in Chinese on Wenjuan Xing, checked by IP address, and paid 6 yuan. It is a purposive
-        sample, recruited toward about 200 respondents per district, not a random draw.</li>
-<li><strong>Who my findings can speak about.</strong> Adult migrants without a Shanghai hukou who were in
-        Shanghai in the last weeks of the 2022 lockdown, who were reachable by a paid online survey in Chinese,
-        and whose address was geocoded. It is not “Shanghai residents”, and it is not all migrants.</li>
-<li><strong>The codes I used.</strong> <code>Migration status</code> 2 (permanent migrant without a Shanghai
-        hukou) and 3 (temporary migrant). <code>Food insecurity</code> 1 to 4, where 1 is food secure, 2 mildly,
-        3 moderately and 4 severely insecure; the codebook confirms the order against the published shares (16,
-        15, 54 and 15 per cent). The codebook does not define 0. Eight respondents in the file have it, and two
-        of them were in my group.</li>
-<li><strong>Unweighted.</strong> The study’s published percentages are weighted and my file has no weight
-        column, so my shares are raw shares of this sample. The study puts 69 per cent of all respondents in
-        categories 3–4 (54 + 15). My 77.6 per cent is a different group, migrants without a hukou with a
-        coordinate, and unweighted, so the gap between them is not a finding.</li>
-<li><strong>553 gaps that look like data.</strong> 553 respondents have no coordinate, so any distance rule
-        drops them. They are not a random loss: the problem set reports that 32.5 per cent of them screen
-        positive for depression, against 27.0 per cent of the rest. My analysis cannot tell whether they also
-        differ on food insecurity.</li>
-<li><strong>Shared coordinates.</strong> 234 respondents in the file sit on 102 shared coordinates, including
-        eleven in People’s Park. These are geocoder fallbacks, not neighbours. None of my filters removed them,
-        so they stayed in. People’s Park is 2.04 km from my centre, so any fallbacks would land in the 0–10 km
-        band.</li>
-<li><strong>Addresses removed.</strong> The survey once held full postal addresses. They were removed before
-        the file reached me, and the file doesn’t say who removed them or on what authority. The coordinates
-        stayed, and a coordinate to six decimals is still an address, which is why nothing on this page is
-        zoomed past city scale.</li>
-<li><strong>The boundaries.</strong> <code>LAB04_shanghai-districts.geojson</code> holds Shanghai’s 16
-        districts from DataV.GeoAtlas (Alibaba), retrieved by the course in September 2026. It states no
-        licence, so I record its terms as not stated. The <code>survey_code</code> field (1–16) was derived for
-        the course by joining points to polygons; it is not in the source.</li>
-</ul>
-<h3>Who each step dropped</h3>
+<p>The analysis uses the 2022 Shanghai Lockdown Study, an online survey conducted by NYU Shanghai from April 29 to June 1, 2022. The survey included 3,348 respondents, with about 200 respondents per district across 16 districts of Shanghai. </p>
+<p>
+My analysis focuses on adult migrants without a Shanghai hukou who were in Shanghai during the final weeks of the 2022 lockdown and whose addresses could be geocoded. The findings do not represent all Shanghai residents or all migrants.
+</p>
+<p>I used migration-status codes 2 and 3 for permanent and temporary migrants without a Shanghai hukou. Food insecurity was coded from 1 (food secure) to 4 (severely food insecure). The codebook does not explain code 0, so I excluded the eight respondents with that value, two of whom were otherwise in my analysis group.</p>
+<p>The study's published figures are weighted, but my file did not include survey weights. My results are therefore unweighted shares within this sample. The study reported that 69% of all respondents were in categories 3–4. My figure of 77.6% applies to a different group—migrants without a hukou who had coordinates—and should not be compared directly with the published figure.</p>
+<h3>Who was excluded</h3>
 <div class="table-wrap">
 <table class="sensitivity-table">
 <thead>
@@ -88,60 +59,47 @@
 <p>
       I measured distances in QGIS and did the counting and the mapping in ArcGIS Online. Both layers were in
       EPSG:32651 (WGS 84 / UTM 51N) for the distance step, so every distance is straight-line and in metres.
-      <!-- EDIT: add the QGIS version you used, as in Lab 4. -->
 </p>
 <p>
-<strong>The plan, in plain words.</strong> Keep respondents with a coordinate. Keep those with Migration
-      status 2 or 3. Drop Food insecurity 0. Measure each point’s distance to the centre. Sort the points into
-      four bands. Recode food insecurity to 0 or 1. Count n, positives and share in each band. Compare the four
+My inclusion criteria were to include respondents with a coordinate, migration
+      status 2 or 3, and Food insecurity different from 0. Then, I measure each point’s distance to the centre, sort the points into
+      four bands, and recode food insecurity to 0 or 1. After counting the number of valid responses and the share of food-insecure respondents in each band, I compare the four
       shares beside their rough margins.
     </p>
 <p>
-<strong>The centre.</strong> The centroid of the Huangpu polygon, from Centroids in QGIS: (355554.4,
-      3454525.2) in EPSG:32651. It is a point anyone can reproduce from the boundary file. It is not People’s
-      Square or the Bund, and it is not where a resident would point if you asked them for the centre.
+I set the center of the rings as the centroid of the Huangpu polygon, from Centroids in QGIS: (355554.4,
+      3454525.2) in EPSG:32651 since this centroid was closest to the geometric center of Shanghai compared to other districts.
     </p>
 <p>
-<strong>The distance.</strong> A new field <code>dist_km</code> in the Field Calculator:
-      <code>distance($geometry, make_point(355554.4, 3454525.2)) / 1000</code>. This is only right because the
-      layer is in metres.
+I created a new field <code>dist_km</code> in the Field Calculator:
+      <code>distance($geometry, make_point(355554.4, 3454525.2)) / 1000</code>
     </p>
 <p>
-<strong>The bands and the outcome.</strong> <code>0 &lt; dist_km ≤ 10</code> is band 1, <code>10 &lt; dist_km
-      ≤ 20</code> band 2, <code>20 &lt; dist_km ≤ 30</code> band 3, and anything beyond 30 km band 4, so a
-      point exactly on an edge goes to the inner band. <code>Food insecurity</code> 1 and 2 became 0, and 3
-      and 4 became 1, so the mean of the new field is the share.
+<strong>For the bands and the outcome.</strong> <code>0 &lt; dist_km ≤ 10</code> is band 1, <code>10 &lt; dist_km
+      ≤ 20</code> band 2, <code>20 &lt; dist_km ≤ 30</code> band 3, and anything beyond 30 km band 4. <code>Food insecurity</code> 1 and 2 became 0, and 3
+      and 4 became 1.
     </p>
 <p>
-<strong>The counts.</strong> I uploaded the layer with <code>dist_km</code> to ArcGIS Online as a private
-      working layer. For each band I filtered to it and read n from the record count and the positives from the
-      Sum of values of the 0/1 field. The rough margin is <code>2 × √(p × (1 − p) / n)</code>, which assumes a
-      random sample, and this is not one.
+I uploaded the layer with <code>dist_km</code> to ArcGIS Online as a private
+      working layer. For each band, I filtered it and read n from the record count and the positives from the
+      Sum of values of the 0/1 field. The rough margin is <code>2 × √(p × (1 − p) / n)</code>.
     </p>
 <p>
-<strong>Sensitivity.</strong> Two reruns, each changing one decision and keeping the rest fixed. First the
-      bands: the line moved from 10 km to 15 km, giving 0–15, 15–30, 30–45 and 45+ km. Then the cut: the
-      10 km bands again, with the outcome widened from categories 3–4 to categories 2–4.
+For sensitivity checks, I did two reruns. First, I changed the width of the bands: from 10 km to 15 km, giving 0–15, 15–30, 30–45 and 45+ km. Then, I changed the categorical cut-off for food insecurity from categories 3–4 to categories 2–4.
     </p>
 <p>
-<strong>The map.</strong> In ArcGIS Online Map Viewer I ran Find Centroids on the districts and kept
-      Huangpu, and Dissolve Boundaries on the 16 districts to get one municipal polygon. Create Buffers on the
-      centre at 10, 20 and 30 km with distinct rings gave three non-overlapping rings, and Overlay Layers →
-      Intersect clipped them to the municipality so the map doesn’t colour the sea. A second Create Buffers at
-      a single 30 km, no rings, gave a solid disc; Overlay Layers → Erase, with the municipality as input and
-      the disc as the erase layer, left the 30+ band. Merge Layers joined the three rings and the outer band,
+To make the map in ArcGIS Map Viewer, I run Find Centroids on the districts and kept
+      Huangpu, and Dissolve Boundaries on the 16 districts to get one municipal polygon. I then create Buffers on the
+      centre at 10, 20, and 30 km to obtain three non-overlapping rings, and then run Overlay Layers →
+      Intersect to clip them to the municipality. I run another Create Buffers at
+      a single 30 km, then use Overlay Layers → Erase, with the municipality as input and
+      the disc as the erase layer, leaving the 30+ band. I use Merge Layers to join the three rings and the outer band,
       with a text field <code>band</code> and a field <code>band_order</code> (1 to 4), and I added each band’s
-      share by hand to draw the choropleth. For the district version I ran Summarize Within on the 1,610
-      respondents with the district polygons and classed the shares into five natural breaks.
+      share by hand to draw the choropleth. For the district version, I run Summarize Within on the 1,610
+      respondents with the district polygons and classify the shares into five classes using a natural breaks algorithm.
     </p>
 <h2>The map</h2>
-<p class="method-note">
-      Both maps show groups, bands or districts, never people. The dots appear only at city scale, with no
-      attributes, and none of them can be placed at a building. The interactive web map is shared within NYU
-      only; this page carries screenshots.
-    </p>
 <figure>
-<!-- EDIT: export the two ArcGIS views at matched extent and save them as these filenames in the labs folder. -->
 <div class="pair">
 <img alt="Map of Shanghai with three concentric rings around the centre of Huangpu in shades of blue, the 20–30 km ring darkest, and the rest of the municipality in pale grey." src="fig1a-bands-choropleth.png"/>
 <img alt="The same band map with the surveyed respondents added as small red dots at city scale, dense near the centre and sparse toward the edges." src="fig1b-bands-with-respondents.png"/>
@@ -149,7 +107,7 @@
 <figcaption>
         Figure 1. Share of migrants without a hukou in food insecurity categories 3–4, by distance band from the
         Huangpu centroid: 76.2% (0–10 km), 78.3% (10–20 km), 81.0% (20–30 km), 75.3% (30+ km). Left: bands
-        only. Right: the 1,610 respondents as dots at city scale. Rings are geodesic buffers clipped to the
+        only. Right: the 1,610 respondents as dots at the city scale. Rings are geodesic buffers clipped to the
         dissolved district outline; the legend shows the share as a proportion (0.75 = 75%). Unit: four bands,
         smallest n 372 (course floor 20). Source: 2022 Shanghai Lockdown Survey, unweighted; boundaries from
         DataV.GeoAtlas, no stated licence.
@@ -180,10 +138,9 @@
     </p>
 <p>
       Among the 1,610 migrants without a hukou, 77.6% (1,250) were in food insecurity categories 3–4. Across
-      the four bands the share ran from 75.3% in the outermost to 81.0% in the third, a spread of 5.7 points
+      the four bands, the share ran from 75.3% in the outermost to 81.0% in the third, a spread of 5.7 points
       against margins of about ±4 points in each band. It rose over the first three bands and dropped in the
-      fourth. One stretch, 77.0 to 79.7%, lies inside all four ranges, so I can’t rule out the same true share
-      everywhere.
+      fourth.
     </p>
 <h3>The four bands</h3>
 <div class="table-wrap">
@@ -200,11 +157,6 @@
 </tbody>
 </table>
 </div>
-<p>
-      The four counts add to 1,610, the number left after the filters, so nobody was lost in the sorting.
-      Band C sits 4.8 points above band A. Their ranges overlap from 77.0 to 80.2, and the gap is smaller than
-      the two margins added together.
-    </p>
 <h3>Moving the bands</h3>
 <div class="table-wrap">
 <table class="sensitivity-table">
@@ -219,15 +171,6 @@
 </tbody>
 </table>
 </div>
-<p>
-      The 30 km edge is common to both sets of bands, so the last two new bands should add back to the old outer
-      band, and they do: 293 + 79 = 372 respondents and 228 + 52 = 280 positives. The middle peak stays. The
-      15–30 km band is highest at 81.2%, 5.3 points above the inner band, and their ranges meet only between
-      77.9 and 79.3. What is new is at the edge. The 45+ km band has the lowest share, 65.8%, 15.4 points below
-      the 15–30 km band. It is the only gap in either run at categories 3–4 whose ranges don’t touch. But it
-      rests on 79 respondents, below the 100 the course sets as a target, and the main run’s 30+ band had hidden
-      it by averaging it with the 293 respondents at 30–45 km (77.8%).
-    </p>
 <h3>Moving the cut</h3>
 <div class="table-wrap">
 <table class="sensitivity-table">
@@ -242,49 +185,23 @@
 </tbody>
 </table>
 </div>
-<p>
-      Counting mildly insecure respondents as insecure puts 1,440 of 1,610 (89.4%) in the outcome, so there is
-      little room left for bands to differ. The same shape appears anyway: 87.1, 88.0, 93.6, 89.8. Band C is
-      6.5 points above band A, and its range (91.0–96.1) clears band A’s (83.9–90.2) by 0.8 points. It only
-      just clears band B’s (84.8–91.1), and it overlaps band D’s. This is the one place where the middle-band
-      peak is larger than the margins, and the margins assume a random sample.
-    </p>
 <h3>Districts instead of rings</h3>
 <p>
-      The district map doesn’t show rings. Its five classes run from 0.687 to 0.82, about 13 points, and the
-      darkest district lies in the west, not in a ring around Huangpu. With 1,610 respondents over 16
-      districts, about 100 each if they were spread evenly, a district’s rough margin is near ±8 points,
-      wider than any one of the five classes. So the classes mostly separate districts the margins can’t tell
-      apart, and I would read Figure 2 as a check that no obvious ring was missed, not as a ranking.
+      The district map shows a different pattern from the distance-band map. Shares range from 68.7% to 82.0%, and the darkest district is in western Shanghai rather than forming a clear ring around Huangpu.
+With 1,610 respondents across 16 districts, the average would be about 100 respondents per district if they were evenly distributed. At that sample size, the rough margin is around ±8 percentage points—larger than the differences between many of the mapped classes. The map is therefore useful for checking whether the ring pattern misses a broader geographic pattern, but it should not be treated as a reliable ranking of districts.
     </p>
 <h2>What this does not show</h2>
 <div class="limits">
-<p>My analysis cannot see migrants without a hukou who were never reached by a paid online survey in Chinese,
-      the 553 respondents with no coordinate, or how far anyone was from the centre by road: it measures a
-      straight line from the middle of one district’s polygon.</p>
-<p><strong>The sensitivity result.</strong> The answer did not flip. Moving the line to 15 km kept the
-      middle-band peak (+5.3 points over the inner band), and moving the cut to categories 2–4 kept it (+6.5),
-      against +4.8 in the main run. In the main run the ranges overlap, so my main result is the third of the
-      outcomes the problem set describes: a difference that shrinks inside the margins. Two things went beyond
-      that. The broader cut pushed band C’s range clear of band A’s, and the 15 km bands exposed a 45+ km band
-      at 65.8% on 79 respondents. I would call the middle peak a pattern worth testing properly in Week 8, and
-      the far-edge drop a hint that 79 respondents can’t carry. Differences here are taken from the rounded
-      shares shown.</p>
-<p><strong>The decisions behind the numbers.</strong> The centre is the Huangpu centroid, chosen because it is
-      reproducible, not because it is where the city’s middle is. The 10 km width and the 30 km edge are my
-      numbers, and the 15 km run shows that moving them changes what the outer bands say. I kept the shared
-      coordinates in and did not re-run without them, so the inner band may carry some geocoder fallbacks.
-      The ring polygons on the map came from ArcGIS Online, which uses geodesic buffers, while the respondents
-      were assigned to bands by planar distance in EPSG:32651. The map’s centre was also computed again in
-      ArcGIS Online, separately from the QGIS centroid. I expect them to agree closely, but I did not compare
-      the two points or test whether any respondent would change band.</p>
-<p><strong>The sample.</strong> The rough margins assume a random sample. This one was recruited toward about
-      200 respondents per district, so the size of a band reflects the recruitment as much as the city, and the
-      true uncertainty is larger than the margins say. A band’s share is a fact about that group of
-      respondents, not about any one of them.</p>
-<p>I have not redistributed either source file. The survey is not public, and the boundary file has no stated
-      licence. I have included derived shares and city-scale map images, identified the sources, and noted
-      that the boundary terms are unspecified. The web map is shared within NYU only.</p>
+<p>The main result is a possible peak in food insecurity 20–30 km from the Huangpu centroid, not a clear distance gradient. The share in categories 3–4 was 81.0% in this band, compared with 76.2% in the inner band and 75.3% in the outer band. The rough ranges overlap, so the differences may reflect sampling variation.</p>
+<p>The sensitivity checks showed a similar middle-band peak when I moved the boundary to 15 km and when I counted mild food insecurity as well. The wider food-insecurity definition produced a larger gap between the middle and inner bands, but the rough margins still rely on a random-sample assumption. The 45+ km band also had a lower share, but its 79 respondents are too few to support a strong conclusion.
+</p>
+<p>One possible explanation for this pattern is the difference in food access across the city. The outer areas may have more agricultural activities and local food production, making some food more readily available. People living closer to the centre, on the other hand, may have greater purchasing power and better access to shops, services, and other resources. Migrants in the middle bands may fall between these two situations: they may have less access to locally produced food than those in outer areas, while also having fewer financial resources than people closer to the centre. This could help explain why food insecurity was highest in the middle bands. However, this is only a possible explanation, as my analysis did not directly measure agricultural activity, purchasing power, or access to food resources. </p>
+<p>Several limitations affect how these findings should be read. The sample was recruited online and purposively, not randomly, so it does not represent all migrants in Shanghai. The 553 respondents without coordinates were excluded, and their food insecurity levels are unknown. Shared geocoder fallback coordinates may also have placed some respondents in the wrong band. In addition, the analysis measures straight-line distance from the centroid of Huangpu, not travel distance or distance from a commonly recognised city centre.
+</p>
+<p>The choices used to create the bands also matter. The 10 km and 30 km boundaries were decisions made for this analysis, and changing them altered the pattern at the city's edge. The map buffers were created in ArcGIS Online, while respondent distances were calculated in QGIS; the centre point was calculated separately in the two programs, and I did not check whether any small difference changed a respondent's band.
+</p>
+<p>Overall, the results suggest a middle-distance peak that could be tested with a stronger sample and a more formal statistical analysis. They do not show that distance from central Shanghai causes food insecurity, nor do they establish that the observed differences apply to migrants beyond this survey sample.
+</p>
 <p><strong>AI use:</strong> I used Claude to turn my results notes into this entry and to check the arithmetic
       for the shares and rough margins. The question, the analysis in QGIS and ArcGIS Online, the maps and the
       interpretation are my own, and I checked the figures here against the counts in my own tables.
